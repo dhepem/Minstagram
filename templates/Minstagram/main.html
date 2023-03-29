@@ -50,6 +50,7 @@
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(1.5px);
             -webkit-backdrop-filter: blur(1.5px);
+            z-index: 1000;
         }
 
         .modal_window {
@@ -68,17 +69,32 @@
 </head>
 
 <body>
-<nav class="navbar navbar-expand-lg bg-light" style="position: fixed; width: 100%">
+<nav class="navbar navbar-expand-lg bg-light" style="position: fixed; width: 100%; z-index: 999">
     <div class="container-fluid" style="justify-content: space-between; flex-wrap: nowrap; min-width: 1000px">
-        <a class="navbar-brand" href="#"><img style="width: 100px"
-                                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRChGovmIw4OrAl1Mk9CtzXV2v7Vo--dOSHcQ&usqp=CAU"/></a>
+        <a class="navbar-brand" href="/main"><img style="width: 100px"
+                                                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRChGovmIw4OrAl1Mk9CtzXV2v7Vo--dOSHcQ&usqp=CAU"/></a>
         <input class="form-control me-2" style="width: 400px" type="search" placeholder="Search" aria-label="Search">
-        <div>
-            <span class="material-icons-outlined">home</span>
-            <span class="material-icons-outlined">send</span>
-            <span id="nav_bar_add_box" class="material-icons-outlined">add_box</span>
-            <span class="material-icons-outlined">explore</span>
-            <span class="material-icons-outlined">favorite_border</span>
+        <div style="display: flex">
+            <a href="/main" style="color: black"><span class="material-icons-outlined"
+                                                       style="padding-right: 10px">home</span></a>
+            <span id="nav_bar_add_box" class="material-icons-outlined" style="padding-right: 10px">add_box</span>
+            <div class="dropdown">
+                <a href="#" role="button" data-bs-toggle="dropdown"
+                   aria-expanded="false">
+                    <div class="box" style="width: 25px; height: 25px">
+                        <img class="profile"
+                             src="{% get_media_prefix %}{{ user.profile_image }}">
+                    </div>
+                </a>
+
+                <ul class="dropdown-menu" style="left: -137px">
+                    <li><a class="dropdown-item" href="/content/profile">프로필</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href="/user/logout">로그아웃</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
@@ -90,10 +106,10 @@
             <div class="feed_box">
                 <div style="display: flex; flex-direction: row; align-items: center; margin: 0 10px">
                     <div class="box" style="width: 50px; height: 50px">
-                        <img class="profile" src="{{ feed.profile_image }}">
+                        <img class="profile" src="{% get_media_prefix %}{{ feed.profile_image }}">
                     </div>
                     <div>
-                        {{ feed.user_id }}
+                        {{ feed.nickname }}
                     </div>
                 </div>
 
@@ -102,42 +118,59 @@
                 </div>
                 <div style="display: flex; flex-direction: row; justify-content: space-between; margin: 0 10px">
                     <div>
-                        <span class="material-icons-outlined">favorite_border</span>
-                        <span class="material-icons-outlined">chat_bubble_outline</span>
-                        <span class="material-icons-outlined">send</span>
+                        <span id="favorite_{{ feed.id }}" feed_id="{{ feed.id }}"
+                              class="favorite material-icons-outlined"
+                              style="color: red; cursor: pointer">{% if feed.is_liked %}
+                            favorite{% else %}favorite_border{% endif %}</span>
                     </div>
                     <div>
-                        <span class="material-icons-outlined">bookmark_border</span>
+                        <span id="bookmark_{{ feed.id }}" feed_id="{{ feed.id }}" class="bookmark material-icons-outlined" style="cursor: pointer">
+                            {% if feed.is_marked %}
+                            bookmark
+                            {% else %}
+                            bookmark_border
+                            {% endif %}
+                        </span>
                     </div>
                 </div>
                 <div style="text-align: left; font-size: 14px; margin: 0 10px">춘식이 <b>외 {{ feed.like_count }}명</b>이
                     좋아합니다.
                 </div>
                 <div style="text-align: left; font-size: 16px; margin: 0 10px">
-                    <b>{{ feed.user_id }}</b> {{ feed.content }}
+                    <b>{{ feed.nickname }}</b> {{ feed.content }}
                 </div>
-                <div style="text-align: left; font-size: 14px; margin: 0 10px"><b>aaaa</b> 나도 제주도 가고싶다</div>
-                <div style="text-align: left; font-size: 14px; margin: 0 10px"><b>bbbb</b> 제주도에 외국인 관광객 없어서 놀러가기 좋다던데...
+                <div id="reply_list_{{ feed.id }}">
+                    {% for reply in feed.reply_list %}
+                        <div style="text-align: left; font-size: 14px; margin: 0 10px">
+                            <b>{{ reply.nickname }}</b> {{ reply.reply_content }}</div>
+                    {% endfor %}
                 </div>
-                <div style="border-top: 1px gray"><input type="text" class="form-control"
-                                                         style="box-shadow: none; border: none; outline: none"
-                                                         placeholder="댓글 달기"></div>
+
+                <div style="display:flex; flex-direction: row; align-items: center; border-top: 1px gray">
+                    <input id="reply_{{ feed.id }}" type="text" class="form-control"
+                           style="box-shadow: none; border: none; outline: none"
+                           placeholder="댓글 달기">
+                    <div feed_id="{{ feed.id }}" class="upload_reply"
+                         style="width: 50px; color: cornflowerblue; font-weight: bold">
+                        게시
+                    </div>
+                </div>
             </div>
         {% endfor %}
         <!-- 여기까지 피드박스 -->
     </div>
-    <div style="width: 400px; height: 1000px; background: white; position: fixed; left: 62%">
+    <div style="width: 400px; height: 1000px; background: white; position: fixed; left: 62%; z-index: 0">
         <div style="display: flex; flex-direction: row; align-items: center; margin: 0 10px">
             <div class="box" style="width: 70px; height: 70px">
                 <img class="profile"
-                     src="data:image/jpeg;base64,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">
+                     src="{% get_media_prefix %}{{ user.profile_image }}">
             </div>
             <div style="margin-left: 10px; text-align: left">
                 <div style="font-weight: bold">
-                    L_hamin
+                    {{ user.nickname }}
                 </div>
                 <div style="color: gray">
-                    LeeHamin
+                    {{ user.name }}
                 </div>
             </div>
         </div>
@@ -282,7 +315,7 @@
                 새 이미지 업로드
             </div>
             <div>
-                <span class="material-icons-outlined">close</span>
+                <span class="modal_close material-icons-outlined">close</span>
             </div>
         </div>
         <div class="img_upload_space"
@@ -302,7 +335,7 @@
                 새 이미지 업로드
             </div>
             <div>
-                <span class="material-icons-outlined">close</span>
+                <span class="modal_close material-icons-outlined">close</span>
             </div>
         </div>
         <div style="border-top: solid 1px gray; display: flex; flex-direction: row;">
@@ -325,6 +358,107 @@
 <!-- Optional JavaScript; choose one of the two! -->
 <script>
 
+    $('.bookmark').click(function (e) {
+        let feed_id = e.target.attributes.getNamedItem('feed_id').value;
+        let bookmark_id = e.target.id;
+        let bookmark_text = $.trim($('#' + bookmark_id).html());
+        if (bookmark_text == 'bookmark') {
+            $.trim($('#' + bookmark_id).html('bookmark_border'));
+        } else {
+            $.trim($('#' + bookmark_id).html('bookmark'));
+        }
+
+        $.ajax({
+            url: "/content/bookmark",
+            data: {
+                feed_id: feed_id,
+                bookmark_text: bookmark_text
+            },
+            method: "POST",
+            success: function (data) {
+                console.log("성공");
+            },
+            error: function (request, status, error) {
+                console.log("에러");
+            },
+            complete: function () {
+                console.log("완료");
+            }
+        });
+    });
+
+    $('.favorite').click(function (e) {
+        let feed_id = e.target.attributes.getNamedItem('feed_id').value;
+        let favorite_id = e.target.id;
+        let favorite_text = $.trim($('#' + favorite_id).html());
+        if (favorite_text == 'favorite') {
+            $.trim($('#' + favorite_id).html('favorite_border'));
+        } else {
+            $.trim($('#' + favorite_id).html('favorite'));
+        }
+
+        $.ajax({
+            url: "/content/like",
+            data: {
+                feed_id: feed_id,
+                favorite_text: favorite_text
+            },
+            method: "POST",
+            success: function (data) {
+                console.log("성공");
+            },
+            error: function (request, status, error) {
+                console.log("에러");
+            },
+            complete: function () {
+                console.log("완료");
+            }
+        });
+    });
+
+    $('.upload_reply').click(function (e) {
+        let feed_id = e.target.attributes.getNamedItem('feed_id').value;
+        let reply_id = 'reply_' + feed_id;
+        let reply_content = $('#' + reply_id).val();
+
+        if (reply_content.length <= 0) {
+            alert("댓글을 입력하세요");
+            return 0;
+        }
+
+        $.ajax({
+            url: "/content/reply",
+            data: {
+                feed_id: feed_id,
+                reply_content: reply_content
+            },
+            method: "POST",
+            success: function (data) {
+                console.log("성공");
+                alert("댓글 성공");
+                $('#reply_list_' + feed_id).append("<div style='text-align: left; font-size: 14px; margin: 0 10px'><b>{{ user.nickname }}</b>" + reply_content + "</div>");
+                {#location.replace('/main');#}
+            },
+            error: function (request, status, error) {
+                console.log("에러");
+            },
+            complete: function () {
+                console.log("완료");
+                $('#' + reply_id).val('');
+            }
+        });
+
+    });
+
+    $('.modal_close').click(function () {
+        $('#first_modal').css({
+            display: 'none'
+        });
+        $('#second_modal').css({
+            display: 'none'
+        });
+    });
+
     let files;
 
     $('#nav_bar_add_box').click(function () {
@@ -341,16 +475,12 @@
         let file = files[0];
         let image = files[0].name;
         let content = $('#input_feed_content').val();
-        let user_id = "L_hamin";
-        let profile_image = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…F+/5D6rlyDCYztB/XPj+yRYL3j4lcuTPoj8sZLly5SGP/2Q==";
 
         let fd = new FormData();
 
         fd.append('file', file);
         fd.append('image', image);
         fd.append('content', content);
-        fd.append('user_id', user_id);
-        fd.append('profile_image', profile_image);
 
         $.ajax({
             url: "/content/upload",
